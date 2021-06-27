@@ -2,7 +2,7 @@ import { useState } from "react";
 import mammoth from "mammoth";
 import xlsx from "xlsx";
 import "./App.css";
-import { Steps, Result, Button, Space } from "antd";
+import { Steps, Result, Button, Space, Checkbox } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 
 const { Step } = Steps;
@@ -11,6 +11,7 @@ function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [templateFile, setTemplateFile] = useState(null);
   const [templateHeadings, setTemplateHeadings] = useState([]);
+  const [checkedHeadings, setCheckedHeadings] = useState([]);
   const [docFiles, setDocFiles] = useState([]);
 
   const stepNext = () => setCurrentStep(currentStep + 1);
@@ -72,32 +73,55 @@ function App() {
     return dataObject;
   };
 
+  const pickObjectKeys = (object, keys) => {
+    const newObject = {};
+    Object.keys(object).forEach((key) => {
+      if (keys.includes(key)) {
+        newObject[key] = object[key];
+      }
+    });
+    return newObject;
+  };
+
   const exportJSONToExel = (dataObjectList) => {
     const wb = xlsx.utils.book_new();
-    const ws = xlsx.utils.json_to_sheet(dataObjectList, { header: templateHeadings });
+    const ws = xlsx.utils.json_to_sheet(dataObjectList);
     xlsx.utils.book_append_sheet(wb, ws);
     xlsx.writeFile(wb, "sheet.xlsx");
+  };
+
+  const onCheckHeading = (e, headingText) => {
+    const checked = e.target.checked;
+    if (checked) {
+      setCheckedHeadings((headings) => headings.concat(headingText));
+    } else {
+      setCheckedHeadings((headings) => headings.filter((text) => text !== headingText));
+    }
   };
 
   const onUploadTemplateFile = async (e) => {
     const file = e.target.files[0];
     setTemplateFile(file);
+
     const dom = await extractDocDOM(file);
-    const headingNodes = Array.prototype.filter.call(dom.childNodes, (node) => node.nodeName.match(/H\d/));
-    setTemplateHeadings(headingNodes.map((node) => node.textContent));
+    const nodes = Array.from(dom.childNodes);
+    const headingNodes = nodes.filter((node) => node.nodeName.match(/H\d/)).map((node) => node.textContent);
+    setTemplateHeadings(headingNodes);
+    setCheckedHeadings(headingNodes);
   };
 
   const onUploadDocFile = (e) => {
-    setDocFiles(e.target.files);
+    setDocFiles(Array.from(e.target.files));
   };
 
   const downloadExel = async () => {
     const dataObjectList = [];
     for (const file of docFiles) {
-      const dom = await extractDocDOM(file);
-      const list = createRelationList(dom);
-      const object = createSheetDataObject(list);
-      dataObjectList.push(object);
+      const docDOM = await extractDocDOM(file);
+      const relationList = createRelationList(docDOM);
+      let dataObject = createSheetDataObject(relationList);
+      dataObject = pickObjectKeys(dataObject, checkedHeadings);
+      dataObjectList.push(dataObject);
     }
     exportJSONToExel(dataObjectList);
   };
@@ -120,7 +144,11 @@ function App() {
                   <h3>{templateFile.name}</h3>
                   <ul>
                     {templateHeadings.map((text) => (
-                      <li key={text}>{text}</li>
+                      <li key={text}>
+                        <Checkbox checked={checkedHeadings.includes(text)} onChange={(e) => onCheckHeading(e, text)}>
+                          {text}
+                        </Checkbox>
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -139,24 +167,26 @@ function App() {
             </div>
           )}
           {currentStep === 1 && (
-            <div style={{ maxHeight: "50%", overflow: "auto" }}>
+            <div style={{ height: "100%", display: "flex", alignItems: "center" }}>
               {(docFiles.length && (
-                <ul>
-                  {Array.prototype.map.call(docFiles, (file) => (
+                <ul style={{ maxHeight: "50%", overflow: "auto" }}>
+                  {docFiles.map((file) => (
                     <li key={file.name}>{file.name}</li>
                   ))}
                 </ul>
               )) || (
-                <label className="ant-upload ant-upload-drag dragger">
-                  <input type="file" accept=".doc,.docx" style={{ display: "none" }} multiple onChange={onUploadDocFile} />
-                  <div className="ant-upload-drag-container">
-                    <p className="ant-upload-drag-icon">
-                      <InboxOutlined />
-                    </p>
-                    <p className="ant-upload-text">点击上传</p>
-                    <p className="ant-upload-hint">仅支持doc,docx文件</p>
-                  </div>
-                </label>
+                <div>
+                  <label className="ant-upload ant-upload-drag dragger">
+                    <input type="file" accept=".doc,.docx" style={{ display: "none" }} multiple onChange={onUploadDocFile} />
+                    <div className="ant-upload-drag-container">
+                      <p className="ant-upload-drag-icon">
+                        <InboxOutlined />
+                      </p>
+                      <p className="ant-upload-text">点击上传</p>
+                      <p className="ant-upload-hint">仅支持doc,docx文件</p>
+                    </div>
+                  </label>
+                </div>
               )}
             </div>
           )}
