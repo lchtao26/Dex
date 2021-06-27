@@ -1,10 +1,24 @@
 {
-  "name": "Dex",
+  "name": "dex",
   "version": "0.1.0",
   "private": true,
   "author": "lchtao26",
   "description": "A tool for extracting info from Word file into Exel file",
   "main": "electron-starter.js",
+  "build": {
+    "appId": "com.dex.app",
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "portable"
+    },
+    "files": ["**/*", "build/**/*"],
+    "extends": null,
+    "directories": {
+      "output": "output"
+    }
+  },
   "homepage": "./",
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.4",
@@ -20,13 +34,11 @@
     "xlsx": "^0.17.0"
   },
   "scripts": {
-    "start": "electron-forge start",
-    "electron": "electron .",
+    "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
+    "electron": "electron .",
+    "pack:mac": "electron-builder -m",
+    "pack:win": "electron-builder -w"
   },
   "eslintConfig": {
     "extends": [
@@ -47,38 +59,7 @@
     ]
   },
   "devDependencies": {
-    "@electron-forge/cli": "^6.0.0-beta.57",
-    "@electron-forge/maker-deb": "^6.0.0-beta.57",
-    "@electron-forge/maker-rpm": "^6.0.0-beta.57",
-    "@electron-forge/maker-squirrel": "^6.0.0-beta.57",
-    "@electron-forge/maker-zip": "^6.0.0-beta.57",
-    "electron": "^13.1.4"
-  },
-  "config": {
-    "forge": {
-      "packagerConfig": {},
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "dex"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
-      ]
-    }
+    "electron": "^13.1.4",
+    "electron-builder": "^22.11.7"
   }
 }
