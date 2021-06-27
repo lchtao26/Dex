@@ -2,14 +2,17 @@ import { useState } from "react";
 import mammoth from "mammoth";
 import xlsx from "xlsx";
 import "./App.css";
-import { Steps, Result, Button, Upload } from "antd";
+import { Steps, Result, Button, Space } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 
 const { Step } = Steps;
-const { Dragger } = Upload;
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [templateFile, setTemplateFile] = useState(null);
+  const [templateHeadings, setTemplateHeadings] = useState([]);
+  const [docFiles, setDocFiles] = useState([]);
+
   const stepNext = () => setCurrentStep(currentStep + 1);
   const stepPrev = () => setCurrentStep(currentStep - 1);
 
@@ -21,6 +24,7 @@ function App() {
     dom.innerHTML = html;
     return dom;
   };
+
   const createRelationList = (dom) => {
     const list = [];
     let currentParentNode = null;
@@ -70,14 +74,26 @@ function App() {
 
   const exportJSONToExel = (dataObjectList) => {
     const wb = xlsx.utils.book_new();
-    const ws = xlsx.utils.json_to_sheet(dataObjectList);
+    const ws = xlsx.utils.json_to_sheet(dataObjectList, { header: templateHeadings });
     xlsx.utils.book_append_sheet(wb, ws);
     xlsx.writeFile(wb, "sheet.xlsx");
   };
 
-  const onFileChange = async (e) => {
+  const onUploadTemplateFile = async (e) => {
+    const file = e.target.files[0];
+    setTemplateFile(file);
+    const dom = await extractDocDOM(file);
+    const headingNodes = Array.prototype.filter.call(dom.childNodes, (node) => node.nodeName.match(/H\d/));
+    setTemplateHeadings(headingNodes.map((node) => node.textContent));
+  };
+
+  const onUploadDocFile = (e) => {
+    setDocFiles(e.target.files);
+  };
+
+  const downloadExel = async () => {
     const dataObjectList = [];
-    for (const file of e.target.files) {
+    for (const file of docFiles) {
       const dom = await extractDocDOM(file);
       const list = createRelationList(dom);
       const object = createSheetDataObject(list);
@@ -90,7 +106,7 @@ function App() {
     <div className="app">
       <div className="step">
         <div className="step__header">
-          <Steps current={currentStep} onChange={setCurrentStep}>
+          <Steps current={currentStep}>
             <Step title="上传模板" description="" />
             <Step title="上传文档（批量）" description="" />
             <Step title="下载表格" description="" />
@@ -99,52 +115,84 @@ function App() {
         <div className="step__content">
           {currentStep === 0 && (
             <div>
-              <Dragger className="dragger" accept=".doc,.docx" onChange={onFileChange}>
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">点击或拖拽上传</p>
-                <p className="ant-upload-hint">仅支持doc,docx文件</p>
-              </Dragger>
+              {(templateFile && (
+                <div>
+                  <h3>{templateFile.name}</h3>
+                  <ul>
+                    {templateHeadings.map((text) => (
+                      <li key={text}>{text}</li>
+                    ))}
+                  </ul>
+                </div>
+              )) || (
+                <label className="ant-upload ant-upload-drag dragger">
+                  <input type="file" accept=".doc,.docx" style={{ display: "none" }} onChange={onUploadTemplateFile} />
+                  <div className="ant-upload-drag-container">
+                    <p className="ant-upload-drag-icon">
+                      <InboxOutlined />
+                    </p>
+                    <p className="ant-upload-text">点击上传</p>
+                    <p className="ant-upload-hint">仅支持doc,docx文件</p>
+                  </div>
+                </label>
+              )}
             </div>
           )}
           {currentStep === 1 && (
-            <div>
-              <Dragger className="dragger" accept=".doc,.docx" onChange={onFileChange}>
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">点击或拖拽上传</p>
-                <p className="ant-upload-hint">仅支持doc,docx文件</p>
-              </Dragger>
+            <div style={{ maxHeight: "50%", overflow: "auto" }}>
+              {(docFiles.length && (
+                <ul>
+                  {Array.prototype.map.call(docFiles, (file) => (
+                    <li key={file.name}>{file.name}</li>
+                  ))}
+                </ul>
+              )) || (
+                <label className="ant-upload ant-upload-drag dragger">
+                  <input type="file" accept=".doc,.docx" style={{ display: "none" }} multiple onChange={onUploadDocFile} />
+                  <div className="ant-upload-drag-container">
+                    <p className="ant-upload-drag-icon">
+                      <InboxOutlined />
+                    </p>
+                    <p className="ant-upload-text">点击上传</p>
+                    <p className="ant-upload-hint">仅支持doc,docx文件</p>
+                  </div>
+                </label>
+              )}
             </div>
           )}
-          {currentStep === 2 && (
-            <Result
-              status="success"
-              title="Exel表格已生成"
-              subTitle="Order number: 2017182818828182881 Cloud server configuration takes 1-5 minutes, please wait."
-              extra={[
-                <Button type="primary" key="console">
-                  下载
-                </Button>,
-                <Button key="buy">关闭</Button>,
-              ]}
-            />
-          )}
+          {currentStep === 2 && <Result status="success" title="操作成功" subTitle={`共处理了${docFiles.length}个文件`} />}
         </div>
         <div className="step__action">
-          {currentStep < 2 && (
-            <Button type="primary" onClick={() => stepNext()}>
-              Next
-            </Button>
-          )}
-          {currentStep === 2 && <Button type="primary">Done</Button>}
-          {currentStep > 0 && (
-            <Button style={{ margin: "0 8px" }} onClick={() => stepPrev()}>
-              Previous
-            </Button>
-          )}
+          <Space>
+            {currentStep > 0 && <Button onClick={() => stepPrev()}>上一步</Button>}
+            {currentStep === 0 && (
+              <>
+                <Button type="dashed" style={{ display: templateFile ? "initial" : "none" }} onClick={() => setTemplateFile(null)}>
+                  重新上传
+                </Button>
+                <Button type="primary" disabled={!templateFile} onClick={() => stepNext()}>
+                  下一步
+                </Button>
+              </>
+            )}
+            {currentStep === 1 && (
+              <>
+                <Button type="dashed" style={{ display: docFiles.length ? "initial" : "none" }} onClick={() => setDocFiles([])}>
+                  重新上传
+                </Button>
+                <Button type="primary" disabled={!docFiles.length} onClick={() => stepNext()}>
+                  下一步
+                </Button>
+              </>
+            )}
+            {currentStep === 2 && (
+              <>
+                <Button type="primary" onClick={downloadExel}>
+                  下载
+                </Button>
+              </>
+            )}
+          </Space>
         </div>
       </div>
     </div>

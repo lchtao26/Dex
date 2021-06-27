@@ -1,0 +1,9 @@
+1. 获取docDom
+2. 构建关系列表
+    { 
+      value: Node,
+      parent: Node
+    }
+3. 构建dataHash
+4. 汇集dataHash，使用docExel导出
+

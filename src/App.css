@@ -15,7 +15,12 @@
   flex: 1;
   display: flex;
   justify-content:center;
-  align-items:center
+  align-items:center;
+  min-height: 0;
+}
+
+.step__action{
+  text-align: right
 }
 
 .dragger{
