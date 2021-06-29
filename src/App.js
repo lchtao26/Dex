@@ -1,10 +1,12 @@
 import { useState } from "react";
 import mammoth from "mammoth";
 import xlsx from "xlsx";
-import "./App.css";
-import { Steps, Result, Button, Space, Checkbox } from "antd";
-import { InboxOutlined } from "@ant-design/icons";
 
+import "./App.css";
+import ParseTemplate from "./components/ParseTemplate";
+
+import { Steps, Result, Button, Space, } from "antd";
+import { InboxOutlined } from "@ant-design/icons";
 const { Step } = Steps;
 
 function App() {
@@ -90,19 +92,10 @@ function App() {
     xlsx.writeFile(wb, "sheet.xlsx");
   };
 
-  const onCheckHeading = (e, headingText) => {
-    const checked = e.target.checked;
-    if (checked) {
-      setCheckedHeadings((headings) => headings.concat(headingText));
-    } else {
-      setCheckedHeadings((headings) => headings.filter((text) => text !== headingText));
-    }
-  };
-
   const onUploadTemplateFile = async (e) => {
     const file = e.target.files[0];
+    //     const docParser = await createDocParser(file);
     setTemplateFile(file);
-
     const dom = await extractDocDOM(file);
     const nodes = Array.from(dom.childNodes);
     const headingNodes = nodes.filter((node) => node.nodeName.match(/H\d/)).map((node) => node.textContent);
@@ -141,16 +134,7 @@ function App() {
             <div>
               {(templateFile && (
                 <div>
-                  <h3>{templateFile.name}</h3>
-                  <ul>
-                    {templateHeadings.map((text) => (
-                      <li key={text}>
-                        <Checkbox checked={checkedHeadings.includes(text)} onChange={(e) => onCheckHeading(e, text)}>
-                          {text}
-                        </Checkbox>
-                      </li>
-                    ))}
-                  </ul>
+                  <ParseTemplate file={templateFile} />
                 </div>
               )) || (
                 <label className="ant-upload ant-upload-drag dragger">
