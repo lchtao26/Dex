@@ -25,8 +25,22 @@ const createDocParser = async (docFile) => {
   const html = await convertDocToHTML(arrayBuffer);
   const dom = convertHTMLToDOM(html);
 
+  const findKeywordByLineNumber = (number) => {
+    const nodes = Array.from(dom.childNodes);
+    nodes.unshift({}); // 添加一个空的节点在开头, 使得 nodes[1] 代表第一个非空节点
+    nodes.push({}); // 添加一个空的节点在末尾, 使得 nodes.reverse()[1] 代表第一个非空节点
+
+    if (number < 0) {
+      const reverseNodes = nodes.reverse();
+      const absNumber = Math.abs(number)
+      return reverseNodes[absNumber].textContent;
+    }
+
+    return nodes[number].textContent;
+  };
+
   const normalizePositionToKeyword = (position) => {
-    if (typeof position === "number") return dom.childNodes[position].textContent;
+    if (typeof position === "number") return findKeywordByLineNumber(position)
     if (typeof position === "string") return position;
     throw TypeError("Invalid argument type, argument should be string or number.");
   };
@@ -59,19 +73,13 @@ const createDocParser = async (docFile) => {
     }
   };
 
-  /**
-   * @param {string | number} from
-   * @param {string | number} to
-   *
-   */
   const parse = ({ from, to, isIncludeFrom = false, isIncludeTo = false }) => {
     const fromKw = normalizePositionToKeyword(from);
     const toKw = normalizePositionToKeyword(to);
     const regex = getMatchRegexByIncludeRule(fromKw, toKw, isIncludeFrom, isIncludeTo);
 
     const matched = rawText.match(regex);
-    console.log(matched, {regex})
-    return matched && matched[1]
+    return matched && matched[1];
   };
 
   return {

@@ -1,89 +1,21 @@
 import { useState } from "react";
-import mammoth from "mammoth";
 import xlsx from "xlsx";
 
 import "./App.css";
-import ParseTemplate from "./components/ParseTemplate";
+import { createDocParser } from "./utlls/parse-doc";
+import ConfigParser from "./components/ConfigParser";
 
-import { Steps, Result, Button, Space, } from "antd";
+import { Steps, Result, Button, Space } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 const { Step } = Steps;
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [templateFile, setTemplateFile] = useState(null);
-  const [templateHeadings, setTemplateHeadings] = useState([]);
-  const [checkedHeadings, setCheckedHeadings] = useState([]);
+  const [parserConfig, setParserConfig] = useState([]);
   const [docFiles, setDocFiles] = useState([]);
 
   const stepNext = () => setCurrentStep(currentStep + 1);
   const stepPrev = () => setCurrentStep(currentStep - 1);
-
-  const extractDocDOM = async (file) => {
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml({ arrayBuffer });
-    const html = result.value;
-    const dom = document.createElement("div");
-    dom.innerHTML = html;
-    return dom;
-  };
-
-  const createRelationList = (dom) => {
-    const list = [];
-    let currentParentNode = null;
-
-    const normalizeListNode = (listNode) => {
-      const contentList = Array.prototype.map.call(listNode.childNodes, (node) => node.textContent);
-      const newListNode = listNode.cloneNode(true);
-      newListNode.textContent = contentList.join("\n");
-      return newListNode;
-    };
-
-    for (const node of dom.childNodes) {
-      const isHeadingNode = node.nodeName.match(/H\d/);
-      const isListNode = node.nodeName.match(/(U|O)L/);
-      if (isHeadingNode) {
-        currentParentNode = node;
-        list.push({
-          value: node,
-          parentNode: null,
-        });
-      } else if (isListNode) {
-        list.push({
-          value: normalizeListNode(node),
-          parentNode: currentParentNode,
-        });
-      } else {
-        list.push({
-          value: node,
-          parentNode: currentParentNode,
-        });
-      }
-    }
-    return list;
-  };
-
-  const createSheetDataObject = (relationList) => {
-    const dataObject = {};
-    for (const item of relationList) {
-      if (!item.parentNode) {
-        dataObject[item.value.textContent] = "";
-      } else {
-        dataObject[item.parentNode.textContent] += `${item.value.textContent}\n`;
-      }
-    }
-    return dataObject;
-  };
-
-  const pickObjectKeys = (object, keys) => {
-    const newObject = {};
-    Object.keys(object).forEach((key) => {
-      if (keys.includes(key)) {
-        newObject[key] = object[key];
-      }
-    });
-    return newObject;
-  };
 
   const exportJSONToExel = (dataObjectList) => {
     const wb = xlsx.utils.book_new();
@@ -92,28 +24,30 @@ function App() {
     xlsx.writeFile(wb, "sheet.xlsx");
   };
 
-  const onUploadTemplateFile = async (e) => {
-    const file = e.target.files[0];
-    //     const docParser = await createDocParser(file);
-    setTemplateFile(file);
-    const dom = await extractDocDOM(file);
-    const nodes = Array.from(dom.childNodes);
-    const headingNodes = nodes.filter((node) => node.nodeName.match(/H\d/)).map((node) => node.textContent);
-    setTemplateHeadings(headingNodes);
-    setCheckedHeadings(headingNodes);
-  };
-
   const onUploadDocFile = (e) => {
     setDocFiles(Array.from(e.target.files));
+  };
+
+  const parseDocFileToDataObject = async (file) => {
+    const docParser = await createDocParser(file);
+    const dataObject = {};
+    for (const config of parserConfig) {
+      const { label, from, to, isIncludeFrom, isIncludeTo } = config;
+      const result = docParser.parse({
+        from,
+        to,
+        isIncludeFrom,
+        isIncludeTo,
+      });
+      dataObject[label] = result;
+    }
+    return dataObject;
   };
 
   const downloadExel = async () => {
     const dataObjectList = [];
     for (const file of docFiles) {
-      const docDOM = await extractDocDOM(file);
-      const relationList = createRelationList(docDOM);
-      let dataObject = createSheetDataObject(relationList);
-      dataObject = pickObjectKeys(dataObject, checkedHeadings);
+      const dataObject = await parseDocFileToDataObject(file);
       dataObjectList.push(dataObject);
     }
     exportJSONToExel(dataObjectList);
@@ -124,7 +58,7 @@ function App() {
       <div className="step">
         <div className="step__header">
           <Steps current={currentStep}>
-            <Step title="上传模板" description="" />
+            <Step title="配置规则" description="" />
             <Step title="上传文档（批量）" description="" />
             <Step title="下载表格" description="" />
           </Steps>
@@ -132,22 +66,7 @@ function App() {
         <div className="step__content">
           {currentStep === 0 && (
             <div>
-              {(templateFile && (
-                <div>
-                  <ParseTemplate file={templateFile} />
-                </div>
-              )) || (
-                <label className="ant-upload ant-upload-drag dragger">
-                  <input type="file" accept=".doc,.docx" style={{ display: "none" }} onChange={onUploadTemplateFile} />
-                  <div className="ant-upload-drag-container">
-                    <p className="ant-upload-drag-icon">
-                      <InboxOutlined />
-                    </p>
-                    <p className="ant-upload-text">点击上传</p>
-                    <p className="ant-upload-hint">仅支持doc,docx文件</p>
-                  </div>
-                </label>
-              )}
+              <ConfigParser dataSource={parserConfig} onChange={setParserConfig} />
             </div>
           )}
           {currentStep === 1 && (
@@ -181,10 +100,7 @@ function App() {
             {currentStep > 0 && <Button onClick={() => stepPrev()}>上一步</Button>}
             {currentStep === 0 && (
               <>
-                <Button type="dashed" style={{ display: templateFile ? "initial" : "none" }} onClick={() => setTemplateFile(null)}>
-                  重新上传
-                </Button>
-                <Button type="primary" disabled={!templateFile} onClick={() => stepNext()}>
+                <Button type="primary" disabled={!parserConfig} onClick={() => stepNext()}>
                   下一步
                 </Button>
               </>
