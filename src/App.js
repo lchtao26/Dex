@@ -1,31 +1,35 @@
 import { useState } from "react";
-import xlsx from "xlsx";
 
 import "./App.css";
 import { createDocParser } from "./utlls/parse-doc";
+import { exportDataObjectsToExel } from "./utlls/export-exel";
 import ConfigParser from "./components/ConfigParser";
 
-import { Steps, Result, Button, Space } from "antd";
-import { InboxOutlined } from "@ant-design/icons";
+import { Steps, Result, Button, Space, List } from "antd";
+import { InboxOutlined, PaperClipOutlined } from "@ant-design/icons";
 const { Step } = Steps;
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [parserConfig, setParserConfig] = useState([]);
   const [docFiles, setDocFiles] = useState([]);
+  const [parserConfig, setParserConfig] = useState([]);
+  const [isParsing, setIsParsing] = useState(false);
+  const [dataObjects, setDataObjects] = useState([]);
 
   const stepNext = () => setCurrentStep(currentStep + 1);
   const stepPrev = () => setCurrentStep(currentStep - 1);
 
-  const exportJSONToExel = (dataObjectList) => {
-    const wb = xlsx.utils.book_new();
-    const ws = xlsx.utils.json_to_sheet(dataObjectList);
-    xlsx.utils.book_append_sheet(wb, ws);
-    xlsx.writeFile(wb, "sheet.xlsx");
+  const onUploadDocFile = (e) => {
+    const files = Array.from(e.target.files);
+    // file 参入唯一id, 方便列表操作
+    const now = Date.now();
+    files.forEach((file, index) => (file.id = now.toString() + index));
+
+    setDocFiles(files);
   };
 
-  const onUploadDocFile = (e) => {
-    setDocFiles(Array.from(e.target.files));
+  const onDownloadExel = async () => {
+    exportDataObjectsToExel(dataObjects, "dex-sheet.xlsx");
   };
 
   const parseDocFileToDataObject = async (file) => {
@@ -44,13 +48,13 @@ function App() {
     return dataObject;
   };
 
-  const downloadExel = async () => {
-    const dataObjectList = [];
-    for (const file of docFiles) {
+  const parseDocFilesToDataObjects = async (files) => {
+    const dataObjects = [];
+    for (const file of files) {
       const dataObject = await parseDocFileToDataObject(file);
-      dataObjectList.push(dataObject);
+      dataObjects.push(dataObject);
     }
-    exportJSONToExel(dataObjectList);
+    setDataObjects(dataObjects);
   };
 
   return (
@@ -70,13 +74,38 @@ function App() {
             </div>
           )}
           {currentStep === 1 && (
-            <div style={{ height: "100%", display: "flex", alignItems: "center" }}>
+            <div>
               {(docFiles.length && (
-                <ul style={{ maxHeight: "50%", overflow: "auto" }}>
-                  {docFiles.map((file) => (
-                    <li key={file.name}>{file.name}</li>
-                  ))}
-                </ul>
+                <List
+                  header={
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <p style={{ color: "#1890ff" }}>合计：{docFiles.length}个文件</p>
+                      <Space style={{ paddingRight: "8px" }}>
+                        <Button type="link" danger onClick={() => setDocFiles([])}>
+                          清空
+                        </Button>
+                      </Space>
+                    </div>
+                  }
+                  style={{ width: "60vw", minWidth: 300 }}
+                  dataSource={docFiles}
+                  renderItem={(file) => (
+                    <List.Item
+                      actions={[
+                        <Button
+                          type="link"
+                          onClick={() => {
+                            setDocFiles(docFiles.filter((docFile) => docFile.id !== file.id));
+                          }}
+                        >
+                          删除
+                        </Button>,
+                      ]}
+                    >
+                      <List.Item.Meta avatar={<PaperClipOutlined />} title={file.name} />
+                    </List.Item>
+                  )}
+                />
               )) || (
                 <div>
                   <label className="ant-upload ant-upload-drag dragger">
@@ -93,31 +122,42 @@ function App() {
               )}
             </div>
           )}
-          {currentStep === 2 && <Result status="success" title="操作成功" subTitle={`共处理了${docFiles.length}个文件`} />}
+          {currentStep === 2 && (
+            <div>
+              <Result status="success" title="操作成功" subTitle={`共处理了${docFiles.length}个文件`} />
+            </div>
+          )}
         </div>
         <div className="step__action">
           <Space>
             {currentStep > 0 && <Button onClick={() => stepPrev()}>上一步</Button>}
             {currentStep === 0 && (
               <>
-                <Button type="primary" disabled={!parserConfig} onClick={() => stepNext()}>
+                <Button type="primary" disabled={!parserConfig.length} onClick={() => stepNext()}>
                   下一步
                 </Button>
               </>
             )}
             {currentStep === 1 && (
               <>
-                <Button type="dashed" style={{ display: docFiles.length ? "initial" : "none" }} onClick={() => setDocFiles([])}>
-                  重新上传
-                </Button>
-                <Button type="primary" disabled={!docFiles.length} onClick={() => stepNext()}>
-                  下一步
+                <Button
+                  type="primary"
+                  disabled={!docFiles.length}
+                  loading={isParsing}
+                  onClick={async () => {
+                    setIsParsing(true);
+                    await parseDocFilesToDataObjects(docFiles);
+                    setIsParsing(false);
+                    stepNext();
+                  }}
+                >
+                  {isParsing ? "正在处理..." : "下一步"}
                 </Button>
               </>
             )}
             {currentStep === 2 && (
               <>
-                <Button type="primary" onClick={downloadExel}>
+                <Button type="primary" onClick={onDownloadExel}>
                   下载
                 </Button>
               </>

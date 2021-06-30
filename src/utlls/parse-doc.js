@@ -25,14 +25,14 @@ const createDocParser = async (docFile) => {
   const html = await convertDocToHTML(arrayBuffer);
   const dom = convertHTMLToDOM(html);
 
-  const findKeywordByLineNumber = (number) => {
+  const findKeywordByParagraphIdx = (number) => {
     const nodes = Array.from(dom.childNodes);
     nodes.unshift({}); // 添加一个空的节点在开头, 使得 nodes[1] 代表第一个非空节点
     nodes.push({}); // 添加一个空的节点在末尾, 使得 nodes.reverse()[1] 代表第一个非空节点
 
     if (number < 0) {
       const reverseNodes = nodes.reverse();
-      const absNumber = Math.abs(number)
+      const absNumber = Math.abs(number);
       return reverseNodes[absNumber].textContent;
     }
 
@@ -40,7 +40,7 @@ const createDocParser = async (docFile) => {
   };
 
   const normalizePositionToKeyword = (position) => {
-    if (typeof position === "number") return findKeywordByLineNumber(position)
+    if (typeof position === "number") return findKeywordByParagraphIdx(position);
     if (typeof position === "string") return position;
     throw TypeError("Invalid argument type, argument should be string or number.");
   };
@@ -54,22 +54,22 @@ const createDocParser = async (docFile) => {
   const getMatchRegexByIncludeRule = (matchFrom, matchTo, isIncludeFrom, isIncludeTo) => {
     if (isIncludeFrom && isIncludeTo) {
       // 匹配:左闭右闭 [from, to]
-      return new RegExp(`\\n(${matchFrom}[^]*\\n${matchTo})`);
+      return new RegExp(`\n(${matchFrom}[^]*\n${matchTo})`);
     }
 
     if (!isIncludeFrom && !isIncludeTo) {
       // 匹配:左开右开 (from, to)
-      return new RegExp(`\\n${matchFrom}([^]*)\\n${matchTo}`);
+      return new RegExp(`\n${matchFrom}([^]*)\n${matchTo}`);
     }
 
     if (!isIncludeFrom && isIncludeTo) {
       // 匹配:左开右闭 (from, to]
-      return new RegExp(`\\n${matchFrom}([^]*\\n${matchTo})`);
+      return new RegExp(`\n${matchFrom}([^]*\n${matchTo})`);
     }
 
     if (isIncludeFrom && !isIncludeTo) {
       // 匹配:左闭右开 [from, to]
-      return new RegExp(`\\n(${matchFrom}[^]*)\\n${matchTo}`);
+      return new RegExp(`\n(${matchFrom}[^]*)\n${matchTo}`);
     }
   };
 
@@ -78,7 +78,8 @@ const createDocParser = async (docFile) => {
     const toKw = normalizePositionToKeyword(to);
     const regex = getMatchRegexByIncludeRule(fromKw, toKw, isIncludeFrom, isIncludeTo);
 
-    const matched = rawText.match(regex);
+    // \n: 在rawText文本前加入空行，是为了适配预设的regex规则
+    const matched = regex.exec("\n" + rawText);
     return matched && matched[1];
   };
 

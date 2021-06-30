@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Button, Card, Form, Modal, Table, Input, Checkbox, InputNumber, Select, Space, Tag } from "antd";
-import { PlusOutlined, ImportOutlined, ExportOutlined } from "@ant-design/icons";
+import { Button, Card, Form, Modal, Table, Input, Checkbox, InputNumber, Select, Space, Tag, Popconfirm } from "antd";
 const { Option } = Select;
 
 const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
@@ -21,7 +20,7 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
             <Form.Item noStyle name="fromType" rules={[{ required: true }]}>
               <Select placeholder="选择边界类型" style={{ width: 100 }} onSelect={() => form.setFieldsValue({ from: undefined })}>
                 <Option value="string">关键词</Option>
-                <Option value="number">行数</Option>
+                <Option value="number">段落数</Option>
               </Select>
             </Form.Item>
             <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.fromType !== currentValues.fromType}>
@@ -33,7 +32,7 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
                 )) ||
                 (getFieldValue("fromType") === "number" && (
                   <Form.Item noStyle name="from" rules={[{ required: true }]}>
-                    <InputNumber placeholder="输入行数（1: 第一行, -1: 最后一行）" style={{ width: 260 }}/>
+                    <InputNumber placeholder="输入段落数（1: 第一段, -1: 最后一段）" style={{ width: 260 }} />
                   </Form.Item>
                 ))
               }
@@ -45,7 +44,7 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
             <Form.Item noStyle name="toType" rules={[{ required: true }]}>
               <Select placeholder="选择边界类型" style={{ width: 100 }} onSelect={() => form.setFieldsValue({ to: undefined })}>
                 <Option value="string">关键词</Option>
-                <Option value="number">行数</Option>
+                <Option value="number">段落数</Option>
               </Select>
             </Form.Item>
             <Form.Item noStyle shouldUpdate={(prevValues, currentValues) => prevValues.toType !== currentValues.toType}>
@@ -57,7 +56,7 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
                 )) ||
                 (getFieldValue("toType") === "number" && (
                   <Form.Item noStyle name="to" rules={[{ required: true }]}>
-                    <InputNumber placeholder="输入行数（1: 第一行, -1: 最后一行）" style={{ width: 260 }}/>
+                    <InputNumber placeholder="输入段落数（1: 第一段, -1: 最后一段）" style={{ width: 260 }} />
                   </Form.Item>
                 ))
               }
@@ -109,10 +108,11 @@ const ParseTemplate = ({ dataSource, onChange }) => {
     URL.revokeObjectURL(url);
   };
 
-  const importFiles = () => {
+  const importFiles = ({ accept }) => {
     return new Promise((resolve) => {
       const input = document.createElement("input");
       input.type = "file";
+      input.accept = accept;
       input.onchange = (e) => {
         const target = e.path[0] || {};
         resolve(target.files);
@@ -132,7 +132,7 @@ const ParseTemplate = ({ dataSource, onChange }) => {
   };
 
   const onImportRule = async () => {
-    const files = await importFiles();
+    const files = await importFiles({ accept: ".json" });
     let result = await readFileAsText(files[0]);
     result = JSON.parse(result);
     onChange(dataSource.concat(result));
@@ -147,22 +147,25 @@ const ParseTemplate = ({ dataSource, onChange }) => {
     <Card
       extra={
         <Space>
-          <Button onClick={onImportRule}>
-            <ImportOutlined />
-            导入规则
+          <Popconfirm title="确认清空规则?" onConfirm={() => onChange([])}>
+            <Button danger size="small" disabled={!dataSource.length}>
+              清空规则
+            </Button>
+          </Popconfirm>
+          <Button size="small" disabled={!dataSource.length} onClick={onExportRule}>
+            保存规则
           </Button>
-          <Button onClick={onExportRule}>
-            <ExportOutlined />
-            导出规则
+          <Button size="small" onClick={onImportRule}>
+            导入规则
           </Button>
           <Button
             type="primary"
+            size="small"
             onClick={() => {
               setModalFormType("add");
               setModalFormVisible(true);
             }}
           >
-            <PlusOutlined />
             添加规则
           </Button>
         </Space>
@@ -179,6 +182,7 @@ const ParseTemplate = ({ dataSource, onChange }) => {
         }}
       />
       <Table
+        pagination={false}
         bordered
         rowKey="id"
         dataSource={dataSource}
@@ -207,7 +211,7 @@ const ParseTemplate = ({ dataSource, onChange }) => {
                 if (type === "number") {
                   const absValue = Math.abs(value);
                   return {
-                    name: value < 0 ? `倒数第${absValue}行` : `第${absValue}行`,
+                    name: value < 0 ? `倒数第${absValue}段` : `第${absValue}段`,
                     color: "blue",
                   };
                 }

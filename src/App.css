@@ -12,23 +12,25 @@
 }
 
 .step__header {
-  margin-bottom: 3rem
+  margin-bottom: 3rem;
 }
 
 .step__content {
   flex: 1;
   display: flex;
-  justify-content:center;
+  justify-content: center;
   min-height: 0;
+  overflow: auto;
 }
 
-.step__action{
-  text-align: right
+.step__action {
+  margin-top: 1.5rem;
+  text-align: right;
 }
 
-.dragger{
-  height: 240px!important;
-  width: 240px!important;
+.dragger {
+  height: 240px !important;
+  width: 240px !important;
   display: flex;
   justify-content: center;
   align-items: center;
