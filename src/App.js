@@ -5,7 +5,7 @@ import { createDocParser } from "./utlls/parse-doc";
 import { exportDataObjectsToExel } from "./utlls/export-exel";
 import ConfigParser from "./components/ConfigParser";
 
-import { Steps, Result, Button, Space, List } from "antd";
+import { Steps, Result, Button, Space, List, message } from "antd";
 import { InboxOutlined, PaperClipOutlined } from "@ant-design/icons";
 const { Step } = Steps;
 
@@ -146,9 +146,14 @@ function App() {
                   loading={isParsing}
                   onClick={async () => {
                     setIsParsing(true);
-                    await parseDocFilesToDataObjects(docFiles);
-                    setIsParsing(false);
-                    stepNext();
+                    try {
+                      await parseDocFilesToDataObjects(docFiles);
+                      stepNext();
+                    } catch (e) {
+                      message.error("处理失败, 请重试");
+                    } finally {
+                      setIsParsing(false);
+                    }
                   }}
                 >
                   {isParsing ? "正在处理..." : "下一步"}
