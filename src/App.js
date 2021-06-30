@@ -3,6 +3,7 @@ import { useState } from "react";
 import "./App.css";
 import { createDocParser } from "./utlls/parse-doc";
 import { exportDataObjectsToExel } from "./utlls/export-exel";
+import { importFiles } from "./utlls/file";
 import ConfigParser from "./components/ConfigParser";
 
 import { Steps, Result, Button, Space, List, message } from "antd";
@@ -19,17 +20,19 @@ function App() {
   const stepNext = () => setCurrentStep(currentStep + 1);
   const stepPrev = () => setCurrentStep(currentStep - 1);
 
-  const onUploadDocFile = (e) => {
-    const files = Array.from(e.target.files);
-    // file 参入唯一id, 方便列表操作
-    const now = Date.now();
-    files.forEach((file, index) => (file.id = now.toString() + index));
-
-    setDocFiles(files);
-  };
-
   const onDownloadExel = async () => {
     exportDataObjectsToExel(dataObjects, "dex-sheet.xlsx");
+  };
+
+  const onClickUploadDocFiles = async () => {
+    const files = await importFiles({ accept: ".doc,.docx", multiple: true });
+
+    // file 参入唯一id, 方便列表操作
+    const now = Date.now();
+    const filesWithId = Array.from(files);
+    filesWithId.forEach((file, index) => (file.id = now.toString() + index));
+
+    setDocFiles(docFiles.concat(filesWithId));
   };
 
   const parseDocFileToDataObject = async (file) => {
@@ -81,8 +84,11 @@ function App() {
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <p style={{ color: "#1890ff" }}>合计：{docFiles.length}个文件</p>
                       <Space style={{ paddingRight: "8px" }}>
-                        <Button type="link" danger onClick={() => setDocFiles([])}>
+                        <Button type="link" danger style={{ padding: 0 }} onClick={() => setDocFiles([])}>
                           清空
+                        </Button>
+                        <Button type="link" style={{ padding: 0 }} onClick={onClickUploadDocFiles}>
+                          上传
                         </Button>
                       </Space>
                     </div>
@@ -94,6 +100,7 @@ function App() {
                       actions={[
                         <Button
                           type="link"
+                          style={{ padding: 0 }}
                           onClick={() => {
                             setDocFiles(docFiles.filter((docFile) => docFile.id !== file.id));
                           }}
@@ -108,8 +115,7 @@ function App() {
                 />
               )) || (
                 <div>
-                  <label className="ant-upload ant-upload-drag dragger">
-                    <input type="file" accept=".doc,.docx" style={{ display: "none" }} multiple onChange={onUploadDocFile} />
+                  <label className="ant-upload ant-upload-drag dragger" onClick={onClickUploadDocFiles}>
                     <div className="ant-upload-drag-container">
                       <p className="ant-upload-drag-icon">
                         <InboxOutlined />
