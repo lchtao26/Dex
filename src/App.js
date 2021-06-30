@@ -6,7 +6,7 @@ import { exportDataObjectsToExel } from "./utlls/export-exel";
 import { importFiles } from "./utlls/file";
 import ConfigParser from "./components/ConfigParser";
 
-import { Steps, Result, Button, Space, List, message } from "antd";
+import { Steps, Result, Button, Space, List, Popconfirm,  message } from "antd";
 import { InboxOutlined, PaperClipOutlined } from "@ant-design/icons";
 const { Step } = Steps;
 
@@ -84,9 +84,11 @@ function App() {
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <p style={{ color: "#1890ff" }}>合计：{docFiles.length}个文件</p>
                       <Space style={{ paddingRight: "8px" }}>
-                        <Button type="link" danger style={{ padding: 0 }} onClick={() => setDocFiles([])}>
-                          清空
-                        </Button>
+                        <Popconfirm title="确认清空规则?" onConfirm={() => setDocFiles([])}>
+                          <Button type="link" danger style={{ padding: 0 }}>
+                            清空
+                          </Button>
+                        </Popconfirm>
                         <Button type="link" style={{ padding: 0 }} onClick={onClickUploadDocFiles}>
                           上传
                         </Button>
