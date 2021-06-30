@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { importFiles, readFileAsText } from '../utlls/file'
 import { Button, Card, Form, Modal, Table, Input, Checkbox, InputNumber, Select, Space, Tag, Popconfirm } from "antd";
 const { Option } = Select;
 
@@ -106,29 +107,6 @@ const ParseTemplate = ({ dataSource, onChange }) => {
     a.click();
 
     URL.revokeObjectURL(url);
-  };
-
-  const importFiles = ({ accept }) => {
-    return new Promise((resolve) => {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = accept;
-      input.onchange = (e) => {
-        const target = e.path[0] || {};
-        resolve(target.files);
-      };
-      input.click();
-    });
-  };
-
-  const readFileAsText = (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        resolve(e.target.result);
-      };
-      reader.readAsText(file);
-    });
   };
 
   const onImportRule = async () => {
