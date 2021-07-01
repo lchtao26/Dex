@@ -1,13 +1,12 @@
 const importFiles = (attrs = {}) => {
   return new Promise((resolve) => {
     const input = document.createElement("input");
+    input.type = "file";
     for (const attr in attrs) {
       input[attr] = attrs[attr];
     }
-    input.type = "file";
     input.onchange = (e) => {
-      const target = e.path[0] || {};
-      resolve(target.files);
+      resolve(e.target.files);
     };
     input.click();
   });
