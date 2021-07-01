@@ -73,6 +73,13 @@ const createDocParser = async (docFile) => {
     }
   };
 
+  /** 文档解析
+   * @param {object}          config
+   * @param {string | number} config.from           解析开始边界 (关键词 或 段落位置)
+   * @param {string | number} config.to             解析结束边界 (关键词 或 段落位置)
+   * @param {boolean}         config.isIncludeFrom  是否包含开始边界
+   * @param {boolean}         config.isIncludeTo    是否包含结束边界
+   */
   const parse = ({ from, to, isIncludeFrom = false, isIncludeTo = false }) => {
     const fromKw = normalizePositionToKeyword(from);
     const toKw = normalizePositionToKeyword(to);
