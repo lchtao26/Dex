@@ -12,7 +12,9 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
   return (
     <Modal title={type === "add" ? "新增" : "编辑"} visible={visible} forceRender onOk={onOk} onCancel={onCancel} width={660}>
       <Form form={form} labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
-        <Form.Item noStyle label="ID" name="id" />
+        <Form.Item noStyle label="ID" name="id" >
+          <Input style={{ display: 'none' }}/>
+        </Form.Item>
         <Form.Item label="字段名" name="label" rules={[{ required: true, message: "请输入" }]}>
           <Input />
         </Form.Item>
@@ -161,6 +163,7 @@ const ParseTemplate = ({ dataSource, onChange }) => {
       />
       <Table
         pagination={false}
+        sticky
         bordered
         rowKey="id"
         dataSource={dataSource}

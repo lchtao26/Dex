@@ -3,11 +3,10 @@ import { useState } from "react";
 import "./App.css";
 import { createDocParser } from "./utlls/parse-doc";
 import { exportDataObjectsToExel } from "./utlls/export-exel";
-import { importFiles } from "./utlls/file";
 import ConfigParser from "./components/ConfigParser";
+import FileList from "./components/FileList";
 
-import { Steps, Result, Button, Space, List, Popconfirm,  message } from "antd";
-import { InboxOutlined, PaperClipOutlined } from "@ant-design/icons";
+import { Steps, Result, Button, Space, message } from "antd";
 const { Step } = Steps;
 
 function App() {
@@ -22,17 +21,6 @@ function App() {
 
   const onDownloadExel = async () => {
     exportDataObjectsToExel(dataObjects, "dex-sheet.xlsx");
-  };
-
-  const onClickUploadDocFiles = async () => {
-    const files = await importFiles({ accept: ".doc,.docx", multiple: true });
-
-    // file 参入唯一id, 方便列表操作
-    const now = Date.now();
-    const filesWithId = Array.from(files);
-    filesWithId.forEach((file, index) => (file.id = now.toString() + index));
-
-    setDocFiles(docFiles.concat(filesWithId));
   };
 
   const parseDocFileToDataObject = async (file) => {
@@ -72,66 +60,17 @@ function App() {
         </div>
         <div className="step__content">
           {currentStep === 0 && (
-            <div>
+            <div style={{ width: "100%" }}>
               <ConfigParser dataSource={parserConfig} onChange={setParserConfig} />
             </div>
           )}
           {currentStep === 1 && (
-            <div>
-              {(docFiles.length && (
-                <List
-                  header={
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <p style={{ color: "#1890ff" }}>合计：{docFiles.length}个文件</p>
-                      <Space style={{ paddingRight: "8px" }}>
-                        <Popconfirm title="确认清空规则?" onConfirm={() => setDocFiles([])}>
-                          <Button type="link" danger style={{ padding: 0 }}>
-                            清空
-                          </Button>
-                        </Popconfirm>
-                        <Button type="link" style={{ padding: 0 }} onClick={onClickUploadDocFiles}>
-                          上传
-                        </Button>
-                      </Space>
-                    </div>
-                  }
-                  style={{ width: "60vw", minWidth: 300 }}
-                  dataSource={docFiles}
-                  renderItem={(file) => (
-                    <List.Item
-                      actions={[
-                        <Button
-                          type="link"
-                          style={{ padding: 0 }}
-                          onClick={() => {
-                            setDocFiles(docFiles.filter((docFile) => docFile.id !== file.id));
-                          }}
-                        >
-                          删除
-                        </Button>,
-                      ]}
-                    >
-                      <List.Item.Meta avatar={<PaperClipOutlined />} title={file.name} />
-                    </List.Item>
-                  )}
-                />
-              )) || (
-                <div>
-                  <label className="ant-upload ant-upload-drag dragger" onClick={onClickUploadDocFiles}>
-                    <div className="ant-upload-drag-container">
-                      <p className="ant-upload-drag-icon">
-                        <InboxOutlined />
-                      </p>
-                      <p className="ant-upload-text">点击上传</p>
-                      <p className="ant-upload-hint">仅支持doc,docx文件</p>
-                    </div>
-                  </label>
-                </div>
-              )}
+            <div style={{ margin: "0 auto" }}>
+              <FileList dataSource={docFiles} onChange={setDocFiles} />
             </div>
           )}
           {currentStep === 2 && (
-            <div>
+            <div style={{ margin: '0 auto', marginTop: '10vh' }}>
               <Result status="success" title="操作成功" subTitle={`共处理了${docFiles.length}个文件`} />
             </div>
           )}
