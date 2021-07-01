@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { importFiles, readFileAsText } from '../utlls/file'
-import { Button, Card, Form, Modal, Table, Input, Checkbox, InputNumber, Select, Space, Tag, Popconfirm } from "antd";
+import { downloadFile, importFiles, readFileAsText } from "../utlls/file";
+import { Button, Form, Modal, Table, Input, Checkbox, InputNumber, Select, Space, Tag, Popconfirm } from "antd";
 const { Option } = Select;
 
 const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
@@ -12,8 +12,8 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
   return (
     <Modal title={type === "add" ? "新增" : "编辑"} visible={visible} forceRender onOk={onOk} onCancel={onCancel} width={660}>
       <Form form={form} labelCol={{ span: 6 }} wrapperCol={{ span: 16 }}>
-        <Form.Item noStyle label="ID" name="id" >
-          <Input style={{ display: 'none' }}/>
+        <Form.Item noStyle label="ID" name="id">
+          <Input style={{ display: "none" }} />
         </Form.Item>
         <Form.Item label="字段名" name="label" rules={[{ required: true, message: "请输入" }]}>
           <Input />
@@ -100,22 +100,15 @@ const ParseTemplate = ({ dataSource, onChange }) => {
     onChange(newDataSource);
   };
 
-  const downloadFile = (file, filename) => {
-    const url = URL.createObjectURL(file);
-    const a = document.createElement("a");
-
-    a.href = url;
-    a.download = filename || "download";
-    a.click();
-
-    URL.revokeObjectURL(url);
-  };
-
-  const onImportRule = async () => {
-    const files = await importFiles({ accept: ".json" });
-    let result = await readFileAsText(files[0]);
-    result = JSON.parse(result);
-    onChange(dataSource.concat(result));
+  const onImportRules = async () => {
+    const files = await importFiles({ accept: ".json", multiple: true });
+    let newRules = [...dataSource];
+    for (const file of files) {
+      let rule = await readFileAsText(file);
+      rule = JSON.parse(rule);
+      newRules = newRules.concat(rule);
+    }
+    onChange(newRules);
   };
 
   const onExportRule = () => {
@@ -124,23 +117,23 @@ const ParseTemplate = ({ dataSource, onChange }) => {
   };
 
   return (
-    <Card
-      extra={
-        <Space>
+    <div>
+      <div style={{ display: "flow-root", marginBottom: "1.5rem" }}>
+        <Space style={{ float: "right" }} size={16}>
           <Popconfirm title="确认清空规则?" onConfirm={() => onChange([])}>
-            <Button danger size="small" disabled={!dataSource.length}>
+            <Button type="link" style={{ padding: 0 }} danger disabled={!dataSource.length}>
               清空规则
             </Button>
           </Popconfirm>
-          <Button size="small" disabled={!dataSource.length} onClick={onExportRule}>
+          <Button type="link" style={{ padding: 0 }} disabled={!dataSource.length} onClick={onExportRule}>
             保存规则
           </Button>
-          <Button size="small" onClick={onImportRule}>
+          <Button type="link" style={{ padding: 0 }} onClick={onImportRules}>
             导入规则
           </Button>
           <Button
-            type="primary"
-            size="small"
+            type="link"
+            style={{ padding: 0 }}
             onClick={() => {
               setModalFormType("add");
               setModalFormVisible(true);
@@ -149,8 +142,7 @@ const ParseTemplate = ({ dataSource, onChange }) => {
             添加规则
           </Button>
         </Space>
-      }
-    >
+      </div>
       <ModalForm
         visible={modalFormVisible}
         type={modalFormType}
@@ -163,7 +155,6 @@ const ParseTemplate = ({ dataSource, onChange }) => {
       />
       <Table
         pagination={false}
-        sticky
         bordered
         rowKey="id"
         dataSource={dataSource}
@@ -202,13 +193,13 @@ const ParseTemplate = ({ dataSource, onChange }) => {
                 <div style={{ textAlign: "left" }}>
                   <p>
                     <Space>
-                      开始于
+                      <span style={{ whiteSpace: "nowrap" }}>开始于</span>
                       <Tag color={getTagProps(fromType, from).color}>{getTagProps(fromType, from).name}</Tag>
                     </Space>
                   </p>
                   <p>
                     <Space>
-                      结束于
+                      <span style={{ whiteSpace: "nowrap" }}>结束于</span>
                       <Tag color={getTagProps(toType, to).color}>{getTagProps(toType, to).name}</Tag>
                     </Space>
                   </p>
@@ -220,16 +211,34 @@ const ParseTemplate = ({ dataSource, onChange }) => {
             title: "保留开始边界",
             dataIndex: "isIncludeFrom",
             align: "center",
-            render(value) {
-              return <Checkbox checked={value} />;
+            render(value, record, index) {
+              return (
+                <Checkbox
+                  checked={value}
+                  onChange={(e) => {
+                    const newDataSource = [...dataSource];
+                    newDataSource.splice(index, 1, { ...record, isIncludeFrom: e.target.checked });
+                    onChange(newDataSource);
+                  }}
+                />
+              );
             },
           },
           {
             title: "保留结束边界",
             dataIndex: "isIncludeTo",
             align: "center",
-            render(value) {
-              return <Checkbox checked={value} />;
+            render(value, record, index) {
+              return (
+                <Checkbox
+                  checked={value}
+                  onChange={(e) => {
+                    const newDataSource = [...dataSource];
+                    newDataSource.splice(index, 1, { ...record, isIncludeTo: e.target.checked });
+                    onChange(newDataSource);
+                  }}
+                />
+              );
             },
           },
           {
@@ -258,7 +267,7 @@ const ParseTemplate = ({ dataSource, onChange }) => {
           },
         ]}
       />
-    </Card>
+    </div>
   );
 };
 
