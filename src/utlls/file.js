@@ -1,3 +1,14 @@
+const downloadFile = (file, filename) => {
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = filename || "download";
+  a.click();
+
+  URL.revokeObjectURL(url);
+};
+
 const importFiles = (attrs = {}) => {
   return new Promise((resolve) => {
     const input = document.createElement("input");
@@ -22,4 +33,4 @@ const readFileAsText = (file) => {
   });
 };
 
-export { importFiles, readFileAsText };
+export { downloadFile, importFiles, readFileAsText };
