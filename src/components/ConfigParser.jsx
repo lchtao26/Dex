@@ -19,9 +19,9 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
           <Input />
         </Form.Item>
         <Form.Item label="开始边界" required>
-          <Space>
+          <div style={{ display: "flex" }}>
             <Form.Item noStyle name="fromType" rules={[{ required: true, message: "请选择" }]}>
-              <Select placeholder="选择边界类型" style={{ width: 100 }} onSelect={() => form.setFieldsValue({ from: undefined })}>
+              <Select placeholder="选择边界类型" style={{ width: 140, marginRight: "8px" }} onSelect={() => form.setFieldsValue({ from: undefined })}>
                 <Option value="string">关键词</Option>
                 <Option value="number">段落数</Option>
               </Select>
@@ -30,22 +30,22 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
               {({ getFieldValue }) =>
                 (getFieldValue("fromType") === "string" && (
                   <Form.Item noStyle name="from" rules={[{ required: true, message: "请输入" }]}>
-                    <Input style={{ width: 300 }} placeholder="输入关键词" />
+                    <Input style={{ flex: 1 }} placeholder="输入关键词" />
                   </Form.Item>
                 )) ||
                 (getFieldValue("fromType") === "number" && (
                   <Form.Item noStyle name="from" rules={[{ required: true, message: "请输入" }]}>
-                    <InputNumber placeholder="输入段落数（1: 第一段, -1: 最后一段）" style={{ width: 300 }} />
+                    <InputNumber style={{ flex: 1 }} placeholder="1: 第一段, -1: 最后一段" />
                   </Form.Item>
                 ))
               }
             </Form.Item>
-          </Space>
+          </div>
         </Form.Item>
         <Form.Item label="结束边界" required>
-          <Space>
+          <div style={{ display: "flex" }}>
             <Form.Item noStyle name="toType" rules={[{ required: true, message: "请选择" }]}>
-              <Select placeholder="选择边界类型" style={{ width: 100 }} onSelect={() => form.setFieldsValue({ to: undefined })}>
+              <Select placeholder="选择边界类型" style={{ width: 140, marginRight: "8px" }} onSelect={() => form.setFieldsValue({ to: undefined })}>
                 <Option value="string">关键词</Option>
                 <Option value="number">段落数</Option>
               </Select>
@@ -54,17 +54,17 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
               {({ getFieldValue }) =>
                 (getFieldValue("toType") === "string" && (
                   <Form.Item noStyle name="to" rules={[{ required: true, message: "请输入" }]}>
-                    <Input style={{ width: 300 }} placeholder="输入关键词" />
+                    <Input style={{ flex: 1 }} placeholder="输入关键词" />
                   </Form.Item>
                 )) ||
                 (getFieldValue("toType") === "number" && (
                   <Form.Item noStyle name="to" rules={[{ required: true, message: "请输入" }]}>
-                    <InputNumber placeholder="输入段落数（1: 第一段, -1: 最后一段）" style={{ width: 300 }} />
+                    <InputNumber style={{ flex: 1 }} placeholder="1: 第一段, -1: 最后一段" />
                   </Form.Item>
                 ))
               }
             </Form.Item>
-          </Space>
+          </div>
         </Form.Item>
         <Form.Item label="保留开始边界" name="isIncludeFrom" valuePropName="checked" rules={[{ required: true, message: "请输入" }]} initialValue={false}>
           <Checkbox />
