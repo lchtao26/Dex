@@ -12,8 +12,9 @@ const { Step } = Steps;
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [docFiles, setDocFiles] = useState([]);
-  const [parserConfig, setParserConfig] = useState([]);
+  const [parserRules, setParserRules] = useState([]);
   const [isParsing, setIsParsing] = useState(false);
+  const [parsingProgress, setParsingProgress] = useState(0);
   const [dataObjects, setDataObjects] = useState([]);
 
   const stepNext = () => setCurrentStep(currentStep + 1);
@@ -23,11 +24,12 @@ function App() {
     exportDataObjectsToExel(dataObjects, "dex-sheet.xlsx");
   };
 
-  const parseDocFileToDataObject = async (file) => {
-    const docParser = await createDocParser(file);
+  const parseDocFileToDataObject = async (file, rules) => {
     const dataObject = {};
-    for (const config of parserConfig) {
-      const { label, from, to, isIncludeFrom, isIncludeTo } = config;
+    const docParser = await createDocParser(file);
+
+    for (const rule of rules) {
+      const { label, from, to, isIncludeFrom, isIncludeTo } = rule;
       const result = docParser.parse({
         from,
         to,
@@ -36,15 +38,20 @@ function App() {
       });
       dataObject[label] = result;
     }
+
     return dataObject;
   };
 
   const parseDocFilesToDataObjects = async (files) => {
     const dataObjects = [];
-    for (const file of files) {
-      const dataObject = await parseDocFileToDataObject(file);
+    const progressPerFile = Math.round(100 / files.length);
+
+    for (let i = 0; i < files.length; i++) {
+      setParsingProgress(i * progressPerFile);
+      const dataObject = await parseDocFileToDataObject(files[i], parserRules);
       dataObjects.push(dataObject);
     }
+
     setDataObjects(dataObjects);
   };
 
@@ -61,7 +68,7 @@ function App() {
         <div className="step__content">
           {currentStep === 0 && (
             <div style={{ width: "100%" }}>
-              <ConfigParser dataSource={parserConfig} onChange={setParserConfig} />
+              <ConfigParser dataSource={parserRules} onChange={setParserRules} />
             </div>
           )}
           {currentStep === 1 && (
@@ -70,7 +77,7 @@ function App() {
             </div>
           )}
           {currentStep === 2 && (
-            <div style={{ margin: '0 auto', marginTop: '10vh' }}>
+            <div style={{ margin: "0 auto", marginTop: "10vh" }}>
               <Result status="success" title="操作成功" subTitle={`共处理了${docFiles.length}个文件`} />
             </div>
           )}
@@ -80,7 +87,7 @@ function App() {
             {currentStep > 0 && <Button onClick={() => stepPrev()}>上一步</Button>}
             {currentStep === 0 && (
               <>
-                <Button type="primary" disabled={!parserConfig.length} onClick={() => stepNext()}>
+                <Button type="primary" disabled={!parserRules.length} onClick={() => stepNext()}>
                   下一步
                 </Button>
               </>
@@ -103,14 +110,14 @@ function App() {
                     }
                   }}
                 >
-                  {isParsing ? "正在处理..." : "下一步"}
+                  {isParsing ? `处理中${parsingProgress}%...` : "下一步"}
                 </Button>
               </>
             )}
             {currentStep === 2 && (
               <>
                 <Button type="primary" onClick={onDownloadExel}>
-                  下载
+                  导出表格
                 </Button>
               </>
             )}
