@@ -47,7 +47,10 @@ function App() {
     const progressPerFile = Math.round(100 / files.length);
 
     for (let i = 0; i < files.length; i++) {
-      setParsingProgress(i * progressPerFile);
+      setParsingProgress((current) => {
+        if (current >= 100) return 100;
+        return i * progressPerFile;
+      });
       const dataObject = await parseDocFileToDataObject(files[i], parserRules);
       dataObjects.push(dataObject);
     }
