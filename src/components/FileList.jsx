@@ -1,6 +1,7 @@
-import { List, Button, Popconfirm, Space } from "antd";
+import { List, Button, Popconfirm, Space, Modal, message } from "antd";
 import { PaperClipOutlined } from "@ant-design/icons";
 import { importFiles } from "../utlls/file";
+import { createDocParser } from "../utlls/parse-doc";
 
 const FileList = ({ dataSource = [], onChange }) => {
   const attachIdToFiles = (files) => {
@@ -18,6 +19,42 @@ const FileList = ({ dataSource = [], onChange }) => {
 
   const onClickDelFile = (file) => {
     onChange(dataSource.filter((item) => item.id !== file.id));
+  };
+
+  const scrollToTop = () => {
+    document.body.scrollTop = 0; // For Safari
+    document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+  };
+
+  const getMsgShareConfig = () => {
+    return {
+      style: { marginTop: "10vh" },
+      key: "currentMsg",
+    };
+  };
+
+  const onClickPreviewFile = async (file) => {
+    await message.loading({ content: "生成预览中...", ...getMsgShareConfig() });
+    try {
+      const docParser = await createDocParser(file);
+      const html = docParser.getHTML();
+      message.success({ content: "生成预览成功", ...getMsgShareConfig(), duration: 1 });
+      Modal.success({
+        title: `预览`,
+        width: 800,
+        closable: true,
+        maskClosable: true,
+        content: (
+          <div style={{ maxHeight: '90vh', overflow: 'auto' }}>
+            <h1 style={{ textAlign: "center" }}>{file.name}</h1>
+            <div dangerouslySetInnerHTML={{ __html: html }} />
+          </div>
+        ),
+      });
+      setTimeout(() => scrollToTop(), 2000)
+    } catch (e) {
+      message.error({ content: "生成预览失败", ...getMsgShareConfig() });
+    }
   };
 
   return (
@@ -43,6 +80,9 @@ const FileList = ({ dataSource = [], onChange }) => {
         <List.Item
           key={file.id}
           actions={[
+            <Button type="link" style={{ padding: 0 }} onClick={() => onClickPreviewFile(file)}>
+              预览
+            </Button>,
             <Button type="link" style={{ padding: 0 }} onClick={() => onClickDelFile(file)}>
               删除
             </Button>,
