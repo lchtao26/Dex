@@ -90,8 +90,23 @@ const createDocParser = async (docFile) => {
     return matched && matched[1];
   };
 
+  const getHTML = () => {
+    return html;
+  };
+  
+  const getDOM = () => {
+    return dom;
+  };
+
+  const getRawText = () => {
+    return rawText;
+  };
+
   return {
     parse,
+    getDOM,
+    getHTML,
+    getRawText,
   };
 };
 
