@@ -15,13 +15,13 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
         <Form.Item noStyle label="ID" name="id">
           <Input style={{ display: "none" }} />
         </Form.Item>
-        <Form.Item label="字段名" name="label" rules={[{ required: true, message: "请输入" }]}>
+        <Form.Item label="标题" name="label" rules={[{ required: true, message: "请输入" }]}>
           <Input />
         </Form.Item>
         <Form.Item label="开始边界" required>
           <div style={{ display: "flex" }}>
             <Form.Item noStyle name="fromType" rules={[{ required: true, message: "请选择" }]}>
-              <Select placeholder="选择边界类型" style={{ width: 140, marginRight: "8px" }} onSelect={() => form.setFieldsValue({ from: undefined })}>
+              <Select placeholder="类型" style={{ width: 100, marginRight: "8px" }} onSelect={() => form.setFieldsValue({ from: undefined })}>
                 <Option value="string">关键词</Option>
                 <Option value="number">段落数</Option>
               </Select>
@@ -45,7 +45,7 @@ const ModalForm = ({ type, visible, form, onSubmit, onCancel }) => {
         <Form.Item label="结束边界" required>
           <div style={{ display: "flex" }}>
             <Form.Item noStyle name="toType" rules={[{ required: true, message: "请选择" }]}>
-              <Select placeholder="选择边界类型" style={{ width: 140, marginRight: "8px" }} onSelect={() => form.setFieldsValue({ to: undefined })}>
+              <Select placeholder="类型" style={{ width: 100, marginRight: "8px" }} onSelect={() => form.setFieldsValue({ to: undefined })}>
                 <Option value="string">关键词</Option>
                 <Option value="number">段落数</Option>
               </Select>
